@@ -98,13 +98,61 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+printf("XXXXXXXX %d\n",ptsx.size());
+
+//  Eigen::VectorXd ptsx_vector ;
+//  Eigen::VectorXd ptsy_vector;
+//
+//  for( int i= 0 ; i < ptsx.size() ; i++ )
+//  {
+//    ptsx_vector.push_back( ptsx(i));
+//  }
+//  for( int i= 0 ; i < ptsy.size() ; i++ )
+//  {
+//    ptsy_vector.push_back( ptsy(i));
+//  }
+
+//std::vector -> Eigen::VectorXd
+//https://forum.kde.org/viewtopic.php?f=74&t=94839
+ Eigen::VectorXd ptsx_v =  Eigen::VectorXd::Map(ptsx.data(), ptsx.size());
+ Eigen::VectorXd ptsy_v =  Eigen::VectorXd::Map(ptsy.data(), ptsy.size());
+
+// Eigen::VectorXd ptsxXX(2);
+// Eigen::VectorXd ptsyXX(2);
+// ptsxXX << -100, 100;
+// ptsyXX << -1, -1;
+// auto coeffs  = polyfit(ptsxXX,ptsyXX,1);
+
+          auto coeffs  = polyfit(ptsx_v,ptsy_v,2);
+          double cte = polyeval(coeffs,px) - py;
+
+          double epsi = psi - atan(coeffs[1]); //XXXXXXXXXXXXXXXXXX!!!!!!!!!!!!!
+
+          Eigen::VectorXd state(6);
+          state << px,py,psi,v,cte,epsi;
+
+          std::vector<double> x_vals = {state[0]};
+          std::vector<double> y_vals = {state[1]};
+          std::vector<double> psi_vals = {state[2]};
+          std::vector<double> v_vals = {state[3]};
+          std::vector<double> cte_vals = {state[4]};
+          std::vector<double> epsi_vals = {state[5]};
+          std::vector<double> delta_vals = {};
+          std::vector<double> a_vals = {};
+        
+        
+          auto vars = mpc.Solve(state, coeffs);
+
+
+
+          double steer_value = vars[6];
+          double throttle_value = vars[7];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = steer_value / deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
