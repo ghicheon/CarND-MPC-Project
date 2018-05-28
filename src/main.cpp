@@ -98,10 +98,15 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
+for( int i=0; i< ptsx.size(); i++)
+{
+        double shift_x = ptsx[i]-px;
+        double shift_y = ptsy[i]-py;
 
-printf("XXXXXXXX %d\n",ptsx.size());
+        ptsx[i] = shift_x *cos(0-psi)-shift_y*sin(0-psi);
+        ptsy[i] = shift_x *sin(0-psi)+shift_y*cos(0-psi);
+}
 
-//  Eigen::VectorXd ptsx_vector ;
 //  Eigen::VectorXd ptsy_vector;
 //
 //  for( int i= 0 ; i < ptsx.size() ; i++ )
@@ -115,8 +120,8 @@ printf("XXXXXXXX %d\n",ptsx.size());
 
 //std::vector -> Eigen::VectorXd
 //https://forum.kde.org/viewtopic.php?f=74&t=94839
- Eigen::VectorXd ptsx_v =  Eigen::VectorXd::Map(ptsx.data(), ptsx.size());
- Eigen::VectorXd ptsy_v =  Eigen::VectorXd::Map(ptsy.data(), ptsy.size());
+// Eigen::VectorXd ptsx_v =  Eigen::VectorXd::Map(ptsx.data(), ptsx.size());
+// Eigen::VectorXd ptsy_v =  Eigen::VectorXd::Map(ptsy.data(), ptsy.size());
 
 // Eigen::VectorXd ptsxXX(2);
 // Eigen::VectorXd ptsyXX(2);
@@ -124,36 +129,39 @@ printf("XXXXXXXX %d\n",ptsx.size());
 // ptsyXX << -1, -1;
 // auto coeffs  = polyfit(ptsxXX,ptsyXX,1);
 
-          auto coeffs  = polyfit(ptsx_v,ptsy_v,2);
-          double cte = polyeval(coeffs,px) - py;
+double *ptrx = &ptsx[0];
+Eigen::Map<Eigen::VectorXd>ptsx_trans(ptrx,6);
 
-          double epsi = psi - atan(coeffs[1]); //XXXXXXXXXXXXXXXXXX!!!!!!!!!!!!!
+double *ptry = &ptsy[0];
+Eigen::Map<Eigen::VectorXd>ptsy_trans(ptry,6);
+
+          auto coeffs  = polyfit(ptsx_trans,ptsy_trans,3);
+          double cte = polyeval(coeffs,0);
+
+          double epsi = - atan(coeffs[1]); //XXXXXXXXXXXXXXXXXX!!!!!!!!!!!!!
+
+          double steer_value = j[1]["steering_angle"]; 
+          double throttle_value = j[1]["throttle"];
 
           Eigen::VectorXd state(6);
-          state << px,py,psi,v,cte,epsi;
+          state << 0,0,0,v,cte,epsi;
 
-          std::vector<double> x_vals = {state[0]};
-          std::vector<double> y_vals = {state[1]};
-          std::vector<double> psi_vals = {state[2]};
-          std::vector<double> v_vals = {state[3]};
-          std::vector<double> cte_vals = {state[4]};
-          std::vector<double> epsi_vals = {state[5]};
-          std::vector<double> delta_vals = {};
-          std::vector<double> a_vals = {};
-        
-        
           auto vars = mpc.Solve(state, coeffs);
 
+////////////////////////////////////////
+////////////////////////////////////////
+////////////////////////////////////////
 
-
-          double steer_value = vars[6];
-          double throttle_value = vars[7];
+double Lf=2.67;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value / deg2rad(25);
-          msgJson["throttle"] = throttle_value;
+
+          //msgJson["steering_angle"] = vars[0] / (deg2rad(25)*Lf);
+          msgJson["steering_angle"] = -vars[0] / (3*deg2rad(25)*Lf); //XXXXXXXXXXXXX
+          msgJson["throttle"] = vars[1];
+
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
@@ -161,6 +169,18 @@ printf("XXXXXXXX %d\n",ptsx.size());
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+for( int i=2; i < vars.size();i++)
+{
+        if(i%2 == 0)
+        {
+                mpc_x_vals.push_back(vars[i]);
+        }
+        else
+        {
+                mpc_y_vals.push_back(vars[i]);
+        }
+}
+
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -171,6 +191,13 @@ printf("XXXXXXXX %d\n",ptsx.size());
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+double poly_inc = 2.5;
+int num_points=25;
+for(int i=1; i<num_points;i++)
+{
+        next_x_vals.push_back(poly_inc*i);
+        next_y_vals.push_back(polyeval(coeffs,poly_inc*i));
+}
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
