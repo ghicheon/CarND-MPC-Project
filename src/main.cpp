@@ -159,7 +159,7 @@ double Lf=2.67;
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
 
           //msgJson["steering_angle"] = vars[0] / (deg2rad(25)*Lf);
-          msgJson["steering_angle"] = -vars[0] / (3*deg2rad(25)*Lf); //XXXXXXXXXXXXX
+          msgJson["steering_angle"] = vars[0] / (deg2rad(25)*Lf); //XXXXXXXXXXXXX
           msgJson["throttle"] = vars[1];
 
 
