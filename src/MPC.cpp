@@ -38,6 +38,7 @@ size_t a_start    = delta_start + N - 1;
 
 
 static unsigned int cnt=0;
+static unsigned int emergency =0;
 
 class FG_eval {
  public:
@@ -56,7 +57,7 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++) {
-      fg[0] += 120*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
+      fg[0] += 90*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
       fg[0] += 1400*CppAD::pow(vars[epsi_start + t] -ref_epsi, 2);
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
@@ -207,28 +208,13 @@ std::cout << "DEBUG1 cnt:"<< cnt << " " << x   << "  "
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-
     if( cnt > 20)
     {
-        if( cte < -3 || cte > 3 )  //be careful!
+        if( emergency == 0 && (cte < -0.7 || cte > 0.7 ) )  //be careful!
         {
             vars_lowerbound[i] = -1.0;
-            vars_upperbound[i] = -0.1;
-        }
-        else if( cte < -2 || cte > 2 )  //be careful!
-        {
-            vars_lowerbound[i] = -1.0;
-            vars_upperbound[i] = -0.01;
-        }
-        else if( cte < -0.5 || cte > 0.5 )  //be careful!
-        {
-            vars_lowerbound[i] = -1.0;
-            vars_upperbound[i] = 0.01;
-        }
-        else if( cte < -0.35 || cte > 0.35 )  //be careful!
-        {
-            vars_lowerbound[i] = -1.0;
-            vars_upperbound[i] = 0.1;
+            vars_upperbound[i] = -0.8;
+            emergency += 2;
         }
         else
         {
@@ -242,6 +228,9 @@ std::cout << "DEBUG1 cnt:"<< cnt << " " << x   << "  "
             vars_upperbound[i] = 1.0;
     }
   }
+
+if( emergency  != 0 )
+    emergency--;
 
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
