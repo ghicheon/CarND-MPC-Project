@@ -77,7 +77,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //XXX cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -144,7 +144,8 @@ Eigen::Map<Eigen::VectorXd>ptsy_trans(ptry,6);
           double throttle_value = j[1]["throttle"];
 
           Eigen::VectorXd state(6);
-          state << 0,0,0,v,cte,epsi;
+          state << px,py,psi,v,cte,epsi;
+          //state << 0,0,0,v,cte,epsi;
 
           auto vars = mpc.Solve(state, coeffs);
 
@@ -204,7 +205,7 @@ for(int i=1; i<num_points;i++)
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //XXX std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.

@@ -23,7 +23,8 @@ const double Lf = 2.67;
 
 double ref_cte =0;
 double ref_epsi=0;
-double ref_v = 35;//45; //50; //100; //XXXXXX
+double ref_v = 50;
+//double ref_v = 80; 
 
 size_t x_start    = 0;
 size_t y_start    = x_start + N;
@@ -33,6 +34,10 @@ size_t cte_start  = v_start + N;
 size_t epsi_start = cte_start + N;
 size_t delta_start= epsi_start + N;
 size_t a_start    = delta_start + N - 1;   
+
+
+
+static unsigned int cnt=0;
 
 class FG_eval {
  public:
@@ -51,20 +56,21 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++) {
-      fg[0] += 100*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
+      fg[0] += 120*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
       fg[0] += 1400*CppAD::pow(vars[epsi_start + t] -ref_epsi, 2);
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
     for (int t = 0; t < N - 1; t++) {
-      fg[0] += 30*CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += 100*CppAD::pow(vars[delta_start + t], 2);
       fg[0] += 10*CppAD::pow(vars[a_start + t], 2);
     }
 
+//XXXXX
     // Minimize the value gap between sequential actuations.
     for (int t = 0; t < N - 2; t++) {
-      fg[0] += 10*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += 30*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += 5*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
@@ -143,12 +149,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
-        double x = state[0];
-        double y = state[1];
+        double x   = state[0];
+        double y   = state[1];
         double psi = state[2];
-        double v = state[3];
+        double v   = state[3];
         double cte = state[4];
-        double epsi = state[5];
+        double epsi= state[5];
+
+double old_psi = psi;
+x=0;
+y=0;
+psi=0;
 
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
@@ -179,11 +190,57 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 0.436332  +0.4 ; // *Lf;
   }
 
+
+cnt++;
+
+
+std::cout << "DEBUG1 cnt:"<< cnt << " " << x   << "  "   
+                        << y    << "  psi:"    
+                        << old_psi     << "  " 
+                        << v       << "  " 
+                        << cte     << "  " 
+                        << epsi   << "  " 
+                        << std::endl;
+
+
+
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -1.0;
-    vars_upperbound[i] = 1.0;
+
+    if( cnt > 20)
+    {
+        if( cte < -3 || cte > 3 )  //be careful!
+        {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = -0.1;
+        }
+        else if( cte < -2 || cte > 2 )  //be careful!
+        {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = -0.01;
+        }
+        else if( cte < -0.5 || cte > 0.5 )  //be careful!
+        {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = 0.01;
+        }
+        else if( cte < -0.35 || cte > 0.35 )  //be careful!
+        {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = 0.1;
+        }
+        else
+        {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = 1.0;
+        }
+    }
+    else
+    {
+            vars_lowerbound[i] = -1.0;
+            vars_upperbound[i] = 1.0;
+    }
   }
 
   // Lower and upper limits for the constraints
@@ -243,7 +300,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // Cost
   auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
+
+//XXX   std::cout << "Cost " << cost << std::endl;
 
   // TODO: Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
