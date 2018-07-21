@@ -23,8 +23,9 @@ const double Lf = 2.67;
 
 double ref_cte =0;
 double ref_epsi=0;
-double ref_v = 50;
+//double ref_v = 50;
 //double ref_v = 80; 
+double ref_v = 100; 
 
 size_t x_start    = 0;
 size_t y_start    = x_start + N;
@@ -204,17 +205,28 @@ std::cout << "DEBUG1 cnt:"<< cnt << " " << x   << "  "
                         << std::endl;
 
 
+  //break policy: the faster the car goes, the more the break is done.
+  // break  = speed * X
 
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
     if( cnt > 20)
     {
-        if( emergency == 0 && (cte < -0.7 || cte > 0.7 ) )  //be careful!
+        if( emergency == 0 && (cte < -0.3 || cte > 0.3 ) )  //be careful!
         {
             vars_lowerbound[i] = -1.0;
-            vars_upperbound[i] = -0.8;
-            emergency += 2;
+            vars_upperbound[i] = -1.0;
+            if( v > 50 )
+                emergency += 2;
+            else if( v > 30 )
+                emergency += 3;
+            else if( v > 20 )
+                emergency += 4;
+            else if( v > 10 )
+                emergency += 5;
+            else 
+                emergency += 7;
         }
         else
         {
