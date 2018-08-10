@@ -39,6 +39,14 @@ size_t a_start    = delta_start + N - 1;
 
 
 static unsigned int cnt=0;
+
+/* When the cross track error exceed some value, the variable emergency is set to some number.
+ * If the speed is high, this value is set to low value.therefore more breaks are done.
+ * If the speed is low, this value is set to high value.therefore more breaks are done.
+ * As a result,this variable means how often the car gets a break. 
+ * Of course, the car will be slowing down when it gets a break.
+ * this variable is mainly for good cornering.
+ */
 static unsigned int emergency =0;
 
 class FG_eval {
@@ -61,7 +69,7 @@ public:
         // The part of the cost based on the reference state.
         for (int t = 0; t < N; t++) {
             fg[0] += 90*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
-            fg[0] += 1400*CppAD::pow(vars[epsi_start + t] -ref_epsi, 2);
+            fg[0] += 1400*CppAD::pow(vars[epsi_start + t] -ref_epsi, 2);//most important!
             fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
         }
 
@@ -189,35 +197,33 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     }
 
     for (int i = delta_start; i < a_start; i++) {
+        /*well. +/- 0.4 is kind of magic number. it works better than Lf?.*/
         vars_lowerbound[i] = -0.436332 -0.4 ; //*Lf;
         vars_upperbound[i] = 0.436332  +0.4 ; // *Lf;
     }
 
-
     cnt++;
 
-
-    std::cout << "DEBUG1 cnt:"<< cnt << " " << x   << "  "
-              << y    << "  psi:"
-              << old_psi     << "  "
-              << v       << "  "
-              << cte     << "  "
-              << epsi   << "  "
-              << std::endl;
-
-
-    //break policy: the faster the car goes, the more the break is done.
-    // break  = speed * X
+    std::cout << "DEBUG1 cnt:"<< cnt         << "  x:" 
+                              << x           << "  y:"
+                              << y           << "  psi:"
+                              << old_psi     << "  v:"
+                              << v           << "  cte:"
+                              << cte         << "  epsi:"
+                              << epsi        << "  "
+                              << std::endl;
 
     // Acceleration/decceleration upper and lower limits.
     // NOTE: Feel free to change this to something else.
     for (int i = a_start; i < n_vars; i++) {
-        if( cnt > 20)
+        if( cnt > 20) //when the car starts to run. the speed is defenitely low. skip it!!
         {
             if( emergency == 0 && (cte < -0.3 || cte > 0.3 ) )  //be careful!
             {
-                vars_lowerbound[i] = -1.0;
-                vars_upperbound[i] = -1.0;
+                vars_lowerbound[i] = -1.0; //break!
+                vars_upperbound[i] = -1.0; // break!
+
+                //break policy: the faster the car goes, the more the break is done.
                 if( v > 50 )
                     emergency += 2;
                 else if( v > 30 )
