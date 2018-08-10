@@ -121,7 +121,8 @@ int main() {
                     auto coeffs  = polyfit(ptsx_trans,ptsy_trans,3);
                     double cte = polyeval(coeffs,0);
 
-                    double epsi = - atan(coeffs[1]); //XXXXX!!!
+                    //it's because of the difference between global coordinate and car coordinates.
+                    double epsi = - atan(coeffs[1]);  //must be -(minus) 
 
                     double steer_value = j[1]["steering_angle"];
                     double throttle_value = j[1]["throttle"];
