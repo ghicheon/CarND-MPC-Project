@@ -9,6 +9,9 @@
 #include "MPC.h"
 #include "json.hpp"
 
+//unit: second
+#define LATENCY   0.1       //100ms
+
 // for convenience
 using json = nlohmann::json;
 
@@ -79,6 +82,7 @@ int main() {
 
     h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
     uWS::OpCode opCode) {
+        double Lf=2.67;
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
@@ -128,13 +132,23 @@ int main() {
                     double throttle_value = j[1]["throttle"];
 
                     Eigen::VectorXd state(6);
+
+                   /*
+                    * consider 100ms latency using kinematic model
+                    */
+                    px += v*cos(psi)*LATENCY;
+                    py += v*sin(psi)*LATENCY;
+                    psi = -psi +1* (v*steer_value)/Lf *LATENCY;
+                    v += throttle_value *LATENCY;
+                    cte += v*sin(epsi)*LATENCY;
+                    epsi += (v* steer_value)/Lf*LATENCY ;
+
                     state << px,py,psi,v,cte,epsi;
                     //state << 0,0,0,v,cte,epsi;
 
 
                     auto vars = mpc.Solve(state, coeffs);
 
-                    double Lf=2.67;
 
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.

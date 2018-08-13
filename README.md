@@ -1,7 +1,38 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+
+
+
+
 ---
+## The Model
+I used the kinematic model of the lecture.It ignores tire pressure and gravity. Howevery, thanks to simplicity,it works well and fast in most cases.    
+
+the equations of the model:       
+
+ nextx = x + v * cos(psi) * dt      
+ nexty = y + v * sin(psi) * dt     
+ nextpsi = psi + v / Lf * delta * dt    
+ nextv = v + a * dt      
+ nextcte = cte + ( y -  v * sin(epsi) * dt        
+ nextepsi = psi - psides + v * delta / Lf * dt     
+
+(FYI, delta is steering angle and psides is throttle.)     
+
+## Timestep Length and Elapsed Duration (N & dt)
+I used  N:10 , dt:0.1          
+These values comes from the QnA lecture and works well.       
+
+
+## Polynomial Fitting and MPC Preprocessing
+I got car's coordinate waypoints by subtracting x/y values  and rotating.
+According to the Q&A lecture, jobs will be done without lots of pain if I adjust all waypoints from global coordinates to car's one. 
+
+## Model Predictive Control with Latency
+I considered 100ms latency by predicting the x,y,psi,v,cte, and epsi using kinamatic model.    
+It seems to work well..
+
 
 ## Dependencies
 
