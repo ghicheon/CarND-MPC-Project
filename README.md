@@ -21,9 +21,13 @@ the equations of the model:
 (FYI, delta is steering angle and psides is throttle.)     
 
 ## Timestep Length and Elapsed Duration (N & dt)
-I used  N:10 , dt:0.1          
-These values comes from the QnA lecture and works well.       
-
+T = dt*N
+T is the prediction horizon. It means how long we're going to predict.
+dt is time interval and N is the number of waypoints.
+According to the lecture, T should be large and dt should be small.The balance of large T and small dt is the key point.
+Smaller dt makes it possible to drive smooth path. 
+If we have large N, it consume a lot of cpu time and we need to consider the cpu power.
+I tried several N&dt values. But I found out N=10,dt=0.1 is better than others.
 
 ## Polynomial Fitting and MPC Preprocessing
 I got car's coordinate waypoints by subtracting x/y values  and rotating.
